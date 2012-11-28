@@ -18,6 +18,7 @@ import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathConstants;
 import javax.xml.xpath.XPathFactory;
 import org.w3c.dom.Document;
+import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 import ru.connect2me.util.hh.search.config.GetHhResumeIdsByKeywordsException;
@@ -55,9 +56,7 @@ public class GetHhResumeIdsByKeywords extends Module implements IGetHhResumeIdsB
           throw new GetHhResumeIdsByKeywordsException("LoadSingleHhResume не смог залогинится на hh.ru");
         } else {
           //Мы авторизовались, теперь нам надо перейти на страницу http://hh.ru/resumesearch
-          HtmlPage resumeSearchPage = webClient.getPage("http://hh.ru/resumesearch");
-          if (checkIfSearchTextFieldExists(resumeSearchPage.asXml())) ;
-          
+          HtmlPage resumeSearchPage = webClient.getPage("http://hh.ru/resumesearch/result?text=" + retrievalRequest);
         }
       } catch (FailingHttpStatusCodeException ex) {
         throw new GetHhResumeIdsByKeywordsException("Не удалось авторизоваться на сервере hh.ru. " + ex.getMessage());
@@ -68,38 +67,5 @@ public class GetHhResumeIdsByKeywords extends Module implements IGetHhResumeIdsB
       }
     }
     return /* empty */ new HashSet<String>();
-  }
-
-  private boolean checkIfSearchTextFieldExists(String strHtml) {
-    //Matcher m = Pattern.compile("<input type=\"search\" name=\"text\" class=\"b-autocomplete HHSearch-Wizard-Input search__field jsxComponent-AutoComplete-Input HH-FirstPageTabs-Vacancies-Keyword\" value=\"штукатур маляр\" autocomplete=\"off\" />").matcher(strHtml);
-    if (strHtml.matches("(?s)\\s*") || !new Check().isWellFormed(strHtml)) return false;
-    else {
-      try {
-        DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-        factory.setNamespaceAware(true); // never forget this!
-        DocumentBuilder builder = factory.newDocumentBuilder();
-        Document doc = builder.parse(new ByteArrayInputStream(strHtml.getBytes("UTF-8")));
-        XPath xpath = XPathFactory.newInstance().newXPath();
-
-        NodeList nodes = (NodeList) xpath.evaluate("/root/tr", doc, XPathConstants.NODESET);
-        for (int j = 0; j < nodes.getLength(); j++) {
-          Document newXmlDocument = DocumentBuilderFactory.newInstance().newDocumentBuilder().newDocument();
-          Node node = nodes.item(j);
-          Node copyNode = newXmlDocument.importNode(node, true);
-          newXmlDocument.appendChild(copyNode);
-          NodeList nodesYear = (NodeList) xpath.evaluate("/tr/td/text()", newXmlDocument, XPathConstants.NODESET);
-          NodeList nodesOrganization = (NodeList) xpath.evaluate("/tr/td/div[count(@*)=0]", newXmlDocument, XPathConstants.NODESET);
-          NodeList nodesSpecialty = (NodeList) xpath.evaluate("/tr/td/div[@class='resume__education__org']", newXmlDocument, XPathConstants.NODESET);
-          String year = nodesYear.item(0).getTextContent().trim().replaceAll("\r\n|\r|\n", "");
-          String organization = nodesOrganization.item(0).getTextContent().trim().replaceAll("\r\n|\r|\n", "");
-          String specialty = nodesSpecialty.item(0).getTextContent().trim().replaceAll("\r\n|\r|\n", "");
-        }
-      } catch (Exception ex) {
-        //throw new ParserHtmlHhResumeToInhouseXmlException("Ошибка при разборе документа для нахождения Education " + ex.getMessage());
-
-      }
-    }
-    
-    return false;
   }
 }
