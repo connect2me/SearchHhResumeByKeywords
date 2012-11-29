@@ -14,7 +14,7 @@ public class TestSearchHhResumeByKeywords {
       connectionProps.put("user", "a8019111@yandex.ru");
       connectionProps.put("pwd", "YDz5iM");
 
-      Set<String> set = new GetHhResumeIdsByKeywords(connectionProps).execute("Дизайнер одежды", 4);
+      Set<String> set = new GetHhResumeIdsByKeywords(connectionProps).execute("шофер лимузин");
       System.out.println("set.size() -> " + set.size());
     } catch (GetHhResumeIdsByKeywordsException ex) {
       System.out.println("Не удалось загрузить резюме." + ex.getMessage());

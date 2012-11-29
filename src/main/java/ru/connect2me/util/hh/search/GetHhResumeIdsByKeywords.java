@@ -1,10 +1,14 @@
 package ru.connect2me.util.hh.search;
 
+import com.gargoylesoftware.htmlunit.BrowserVersion;
 import com.gargoylesoftware.htmlunit.FailingHttpStatusCodeException;
+import com.gargoylesoftware.htmlunit.HttpMethod;
 import com.gargoylesoftware.htmlunit.WebClient;
+import com.gargoylesoftware.htmlunit.WebRequest;
 import com.gargoylesoftware.htmlunit.html.HtmlPage;
 import java.io.IOException;
 import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.HashSet;
 import java.util.Properties;
 import java.util.Set;
@@ -14,6 +18,8 @@ import ru.connect2me.util.hh.search.config.GetHhResumeIdsByKeywordsException;
 import ru.connect2me.util.hh.search.config.Module;
 import ru.connect2me.util.hh.search.config.XMLConfiguration;
 import ru.connect2me.util.hh.search.helper.ProfilePage;
+import com.gargoylesoftware.htmlunit.util.NameValuePair;
+import org.apache.commons.httpclient.util.URIUtil;
 
 /**
  * Получение всех id резюме с hh.ru по строке запроса (ее мы отдаем в запрос hh.ru)
@@ -37,13 +43,15 @@ public class GetHhResumeIdsByKeywords extends Module implements IGetHhResumeIdsB
       logger.debug("Входная строка '" + retrievalRequest + "' не соответствуют критерию запроса - '" + checkInput + "'");
     } else {
       try {
-        WebClient webClient = new WebClient();
+        WebClient webClient = new WebClient(BrowserVersion.CHROME_16);
         HtmlPage profilePage = new ProfilePage(connectionProps).get(webClient);
         boolean isFind = profilePage.asXml().contains("клиент 774702");
         if (!isFind) {
           throw new GetHhResumeIdsByKeywordsException("LoadSingleHhResume не смог залогинится на hh.ru");
         } else { //Мы получили страницу с ссылками на резюме
-          HtmlPage resumeSearchPage = webClient.getPage("http://hh.ru/resumesearch/result?text=" + retrievalRequest);
+          String str = URIUtil.encodeQuery("http://hh.ru/resumesearch/result?text="+retrievalRequest);
+          HtmlPage resumeSearchPage = webClient.getPage(str);          
+         
           String resumeSearchPageStr = resumeSearchPage.asXml();
           Matcher m = Pattern.compile("href=\"/resume/([0-9a-z]+)(?:\\?query)?").matcher(resumeSearchPageStr);
           while (m.find()) {
@@ -56,6 +64,8 @@ public class GetHhResumeIdsByKeywords extends Module implements IGetHhResumeIdsB
         throw new GetHhResumeIdsByKeywordsException("Не удалось получить доступ к странице 'http://hh.ru/resumesearch'. " + ex.getMessage());
       } catch (IOException ex) {
         throw new GetHhResumeIdsByKeywordsException("Не удалось получить доступ к странице 'http://hh.ru/resumesearch'. " + ex.getMessage());
+      }catch(java.lang.UnsupportedOperationException ex){
+        ex.printStackTrace();
       }
     }
     return set;
