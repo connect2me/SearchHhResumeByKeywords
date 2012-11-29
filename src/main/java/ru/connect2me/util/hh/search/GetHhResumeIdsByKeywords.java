@@ -85,7 +85,8 @@ public class GetHhResumeIdsByKeywords extends Module implements IGetHhResumeIdsB
         if (!isFind) throw new GetHhResumeIdsByKeywordsException("LoadSingleHhResume не смог залогинится на hh.ru");
         else { //Мы получили страницу с ссылками на резюме
           for (int i = 0; i < max; i++) {
-            HtmlPage resumeSearchPage = webClient.getPage("http://hh.ru/resumesearch/result?text=" + retrievalRequest + "&page=" + i);
+            String str = URIUtil.encodeQuery("http://hh.ru/resumesearch/result?text=" + retrievalRequest + "&page=" + i);
+            HtmlPage resumeSearchPage = webClient.getPage(str); 
             String resumeSearchPageStr = resumeSearchPage.asXml();
             Matcher m = Pattern.compile("href=\"/resume/([0-9a-z]+)(?:\\?query)?").matcher(resumeSearchPageStr);
             while (m.find()) {
